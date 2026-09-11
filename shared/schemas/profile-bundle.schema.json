@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "bundle_version", "generated", "sources", "contact", "headline", "summary",
+    "cert_registry", "differentiators", "known_genuine_gaps", "resolved_framing_gaps",
+    "portfolio_projects", "ats_keywords", "ai200_domain_coverage", "resume"
+  ],
+  "properties": {
+    "bundle_version": {"type": "integer", "minimum": 1},
+    "generated": {"type": "string", "format": "date"},
+    "sources": {"type": "object"},
+    "contact": {
+      "type": "object",
+      "required": ["name", "email", "phone"],
+      "properties": {
+        "name": {"type": "string"},
+        "email": {"type": "string"},
+        "phone": {"type": "string"},
+        "location": {"type": "string"},
+        "linkedin": {"type": "string"},
+        "github": {"type": "string"},
+        "pluralsight": {"type": "string"}
+      }
+    },
+    "headline": {"type": "string"},
+    "summary": {"type": "string"},
+    "cert_registry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "status"],
+        "properties": {
+          "code": {"type": "string"},
+          "status": {"enum": ["certified", "in_progress", "not_pursuing"]},
+          "date": {"type": ["string", "null"], "format": "date"},
+          "credential_url": {"type": ["string", "null"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "differentiators": {"type": "array", "items": {"type": "string"}},
+    "known_genuine_gaps": {"type": "array"},
+    "resolved_framing_gaps": {"type": "array", "items": {"type": "string"}},
+    "portfolio_projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "url", "stack", "description"],
+        "properties": {
+          "name": {"type": "string"},
+          "url": {"type": "string"},
+          "stack": {"type": "array"},
+          "description": {"type": "string"},
+          "skills_evidence": {"type": "array"}
+        }
+      }
+    },
+    "ats_keywords": {"type": "object"},
+    "ai200_domain_coverage": {"type": "array"},
+    "resume": {
+      "type": "object",
+      "required": ["headline", "summary", "technical_skills", "experience"]
+    }
+  }
+}

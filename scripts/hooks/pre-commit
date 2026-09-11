@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Local, zero-cost pre-commit guardrail — no GitHub Actions minutes involved.
+#
+# CI only runs on manual dispatch here (deliberately, to avoid billed runner
+# time on every push), which means nothing else in the repo automatically
+# catches a bad commit. This hook is the substitute: it runs the fast,
+# already-built checks that exist specifically to catch skill/bundle drift,
+# plus a quick lint pass. It intentionally does NOT run the full pytest suite
+# or mypy — those are slower and better run before pushing, not on every commit.
+#
+# Installed via scripts/install-hooks.sh — see that file for the one-time setup.
+
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+PY=".venv/bin/python3"
+if [ ! -x "$PY" ]; then
+    PY="python3"
+fi
+
+status=0
+
+echo "[pre-commit] ruff check..."
+if command -v ruff >/dev/null 2>&1; then
+    ruff check shared cli mcp_server project-2-profile-learning-hub/skills/profile_hub_bundle_generator/scripts || status=1
+elif "$PY" -m ruff --version >/dev/null 2>&1; then
+    "$PY" -m ruff check shared cli mcp_server project-2-profile-learning-hub/skills/profile_hub_bundle_generator/scripts || status=1
+else
+    echo "  (ruff not installed — skipping; run: pip install -e '.[lint]')"
+fi
+
+echo "[pre-commit] check_skill_hardcoding.py..."
+"$PY" project-2-profile-learning-hub/scripts/check_skill_hardcoding.py . || status=1
+
+echo "[pre-commit] check_bundle_freshness.py..."
+"$PY" project-2-profile-learning-hub/scripts/check_bundle_freshness.py . || status=1
+
+if [ -f "outputs/profile-bundle.json" ]; then
+    echo "[pre-commit] validate.py (6 bundle consistency checks)..."
+    "$PY" project-2-profile-learning-hub/scripts/validate.py . || status=1
+else
+    echo "[pre-commit] outputs/profile-bundle.json not present — skipping validate.py"
+fi
+
+if [ "$status" -ne 0 ]; then
+    echo ""
+    echo "[pre-commit] BLOCKED — fix the issue(s) above, or commit with --no-verify"
+    echo "             only if you're deliberately bypassing this (not recommended)."
+    exit 1
+fi
+
+echo "[pre-commit] clean"
+exit 0

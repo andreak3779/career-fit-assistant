@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "bundle_version", "generated", "headline", "summary",
+    "cert_registry", "technical_skills", "portfolio_projects", "differentiators"
+  ],
+  "properties": {
+    "bundle_version": {"type": "integer", "minimum": 1},
+    "generated": {"type": "string", "format": "date"},
+    "headline": {"type": "string"},
+    "summary": {"type": "string"},
+    "cert_registry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "code": {"enum": ["AZ-900", "AI-200"]},
+          "status": {"enum": ["certified", "in_progress", "not_pursuing"]},
+          "date": {"type": ["string", "null"], "format": "date"},
+          "credential_url": {"type": ["string", "null"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "technical_skills": {"type": "object"},
+    "portfolio_projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "url", "stack", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "url": {"type": "string"},
+          "stack": {"type": "array", "items": {"type": "string"}},
+          "description": {"type": "string"},
+          "skills_evidence": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "differentiators": {"type": "array", "items": {"type": "string"}},
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "company"],
+        "additionalProperties": false,
+        "properties": {
+          "title": {"type": "string"},
+          "company": {"type": "string"},
+          "location": {"type": ["string", "null"]},
+          "dates": {"type": ["string", "null"]},
+          "bullets": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

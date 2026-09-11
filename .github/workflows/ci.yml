@@ -1,0 +1,282 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  template-syntax:
+    name: Template syntax check (project-1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify DOCX templates parse cleanly
+        working-directory: project-1-application-engine
+        run: npm run check-templates
+
+  pii-guard:
+    name: PII guard (app-engine-bundle.md)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run PII guard (fails if bundle is tracked or staged)
+        working-directory: project-1-application-engine
+        run: npm run check-pii
+
+      - name: 'Belt-and-braces: reject any tracked bundle in PR'
+        run: |
+          if git ls-files project-1-application-engine/app-engine-bundle.md | grep -q .; then
+            echo "ERROR: app-engine-bundle.md is tracked in this PR."
+            echo "       This file contains PII (email, phone) and must never be committed."
+            git ls-files project-1-application-engine/app-engine-bundle.md
+            exit 1
+          fi
+          echo "✓ app-engine-bundle.md is not tracked."
+
+  parser-json-valid:
+    name: Validate pluralsight JSON is valid JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate pluralsight_learning_history.json
+        working-directory: project-2-profile-learning-hub
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          path = Path("pluralsight_learning_history.json")
+          if not path.exists():
+              # Gitignored personal data (removed from tracking in 2476a0a) —
+              # never present in a fresh checkout by design. Nothing to
+              # validate here; only checks it when a local run has the file.
+              print("SKIP: pluralsight_learning_history.json not present (gitignored)")
+              sys.exit(0)
+          with open(path, encoding="utf-8") as f:
+              data = json.load(f)
+
+          if not isinstance(data, list):
+              print("ERROR: expected top-level array", file=sys.stderr)
+              sys.exit(1)
+          if len(data) == 0:
+              print("ERROR: expected at least one entry", file=sys.stderr)
+              sys.exit(1)
+
+          required = {"name", "url", "completed_date"}
+          seen_urls = set()
+          for i, entry in enumerate(data):
+              if not isinstance(entry, dict):
+                  print(f"ERROR: entry {i} is not an object", file=sys.stderr)
+                  sys.exit(1)
+              missing = required - entry.keys()
+              if missing:
+                  print(f"ERROR: entry {i} missing required keys: {sorted(missing)}", file=sys.stderr)
+                  sys.exit(1)
+              url = entry.get("url")
+              if url in seen_urls:
+                  print(f"ERROR: duplicate url at entry {i}: {url}", file=sys.stderr)
+                  sys.exit(1)
+              seen_urls.add(url)
+
+          print(f"✓ valid JSON — {len(data)} entries, {len(seen_urls)} unique URLs")
+          PY
+
+  bundle-build:
+    name: Build JSON bundles from canonical markdown sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with schema, docx, and yaml extras
+        run: python3 -m pip install -e ".[schema,docx,yaml]"
+
+      - name: Build profile and presence bundles
+        working-directory: project-2-profile-learning-hub
+        run: python3 skills/profile_hub_bundle_generator/scripts/build_bundles.py
+
+      - name: Upload bundles as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles
+          path: outputs/*.json
+          if-no-files-found: error
+
+  bundle-validate:
+    name: Validate bundle consistency and PII guard
+    runs-on: ubuntu-latest
+    needs: bundle-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download bundles from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: bundles
+          path: outputs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with schema, docx, and yaml extras
+        run: python3 -m pip install -e ".[schema,docx,yaml]"
+
+      - name: Run canonical validation checks
+        working-directory: project-2-profile-learning-hub
+        run: python3 scripts/validate.py
+
+  bundle-schema:
+    name: Validate bundle JSON shape via jsonschema
+    runs-on: ubuntu-latest
+    needs: bundle-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download bundles from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: bundles
+          path: outputs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with schema, docx, and yaml extras
+        run: python3 -m pip install -e ".[schema,docx,yaml]"
+
+      - name: Load both bundles (validates internally)
+        run: |
+          python3 -c "
+          from shared.bundle_loader import load_profile_bundle, load_presence_bundle
+          load_profile_bundle()
+          load_presence_bundle()
+          print('OK: both bundles pass schema validation')
+          "
+
+  pdf-template-smoke:
+    name: Smoke test pdf-template.py
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with docx and pdf extras
+        run: python3 -m pip install -e ".[docx,pdf]"
+
+      - name: Run stdlib smoke tests for pdf-template.py
+        run: python3 -m unittest tests.test_pdf_template -v
+
+  lint:
+    name: Ruff lint + format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with lint extra
+        run: python3 -m pip install -e ".[lint]"
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+  typecheck:
+    name: mypy on shared/ and cli/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with lint extra
+        run: python3 -m pip install -e ".[lint]"
+
+      - name: mypy shared/ cli/
+        run: mypy shared/ cli/
+
+  pytest:
+    name: Run pytest suite with coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package with all extras
+        run: python3 -m pip install -e ".[docx,dev,yaml,schema,pdf,mcp,parser]"
+
+      - name: Build bundles (many tests read outputs/*.json directly)
+        run: python3 -m cli.career_fit_api build
+
+      - name: Run tests with coverage gate
+        # Current measured coverage: 90%. Gate set to 80% as a regression
+        # floor; ratchet higher as more shared/ helpers get dedicated tests.
+        run: python3 -m pytest tests/ -q --cov=shared --cov=cli --cov-report=term-missing --cov-fail-under=80
+
+      - name: Run CLI end-to-end smoke tests
+        run: |
+          python3 -m cli.career_fit_api build
+          python3 -m cli.career_fit_api validate
+          python3 -m cli.career_fit_api fit-check tests/fixtures/sample-jd.md
+          python3 -m cli.career_fit_api gap-analysis tests/fixtures/sample-jd.md --out outputs/SampleJD_GapAnalysis.md
+          python3 -m cli.career_fit_api generate-linkedin --out outputs/LinkedIn_Copy.md
+          python3 -m cli.career_fit_api generate-github --out outputs/GitHub_Readme.md
+          python3 -m cli.career_fit_api generate-jobgether --out outputs/Jobgether_Copy.md
+          python3 -m cli.career_fit_api generate-job-board --out outputs/JobBoard_Copy.md
+          python3 -m cli.career_fit_api generate-pluralsight --out outputs/Pluralsight_Copy.md
+          python3 -m cli.career_fit_api generate-resume tests/fixtures/sample-jd.md --out outputs/SampleJD_Resume.docx
+          python3 -m cli.career_fit_api generate-cover-letter tests/fixtures/sample-jd.md --out outputs/SampleJD_CoverLetter.docx
+          python3 -m cli.career_fit_api generate-cold-call tests/fixtures/sample-jd.md --out outputs/SampleJD_ColdCall.docx
+          python3 -m cli.career_fit_api generate-job-site tests/fixtures/sample-jd.md --out outputs/SampleJD_JobSite.txt
+          python3 -m cli.career_fit_api generate-thank-you tests/fixtures/sample-jd.md --out outputs/SampleJD_ThankYou.docx --discussion-point "We discussed the team's current sprint priorities."
+          python3 -m cli.career_fit_api interview-prep tests/fixtures/sample-jd.md --out outputs/SampleJD_InterviewPrep.md
+
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Lint markdown files
+        run: markdownlint '**/*.md'

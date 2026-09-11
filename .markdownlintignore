@@ -1,0 +1,43 @@
+# Generated artifacts
+outputs/
+*.meta.json
+
+# Virtual environments / tooling caches
+node_modules/
+.venv/
+.venv-1/
+.venv-2/
+project-2-profile-learning-hub/.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# LLM runtime skill files — formatting is intentionally conversational,
+# and reformatting them risks changing token boundaries / prompt behavior.
+# (Actual layout is skills/<skill-name>/SKILL.md, one directory deeper than
+# these patterns originally accounted for — ** covers the skill-name segment.)
+**/skills/**/SKILL.md
+
+# Test fixtures are parser input data, not documentation.
+tests/fixtures/
+
+# Data / reference markdown where compact formatting is intentional
+project-2-profile-learning-hub/Resume_Snapshot.md
+project-2-profile-learning-hub/Resume_Snapshot.example.md
+project-1-application-engine/reference/
+project-1-application-engine/fixtures/
+project-2-profile-learning-hub/pluralsight-courses.md
+project-2-profile-learning-hub/data/ms-learn-courses.md
+project-2-profile-learning-hub/github-repos.md
+project-2-profile-learning-hub/profile-facts.md
+project-2-profile-learning-hub/skills-summary.md
+project-2-profile-learning-hub/course-urls.md
+project-2-profile-learning-hub/non_resume_experience.md
+project-3-presence-identity/presence-bundle.md
+project-1-application-engine/app-engine-bundle.md
+
+# Draft content for pasting into external profile forms — same "living
+# data, not documentation" category as presence-bundle.md above.
+project-3-presence-identity/*-update-draft.md

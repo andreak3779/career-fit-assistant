@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "EXAMPLE template — copy to a new role file (e.g. senior-fullstack.json)",
+    "and fill in all values. Engine: python pdf-template.py <this-file>",
+    "Allowed color values (case-sensitive, mapped to reportlab colours): NAVY, RED,",
+    "AMBER, GREEN, PURP, BLUE, LGRAY, MGRAY, WHITE.",
+    "Each 'plan' entry is either {type:'head', color, heading} or",
+    "{type:'course', source, color, num, title, url, gap, hrs}."
+  ],
+
+  "output": "outputs/EXAMPLE_RoleName_v1.pdf",
+  "banner": {
+    "title":    "Role Title — Learning Plan",
+    "subtitle": "Pluralsight + Applied Skills Learning Plan — Gap Closure",
+    "meta":     "Sarah Ashford · Month Year | Cert context (or remove this substring)"
+  },
+  "urgency_text": null,
+  "about_text": "2-3 sentences. What the plan covers, how many items, total estimated hours, sources used. Whether this is for an active application.",
+  "legend": [
+    {"label": "Priority 1 — Genuine gaps. Complete before applying.", "color": "RED"},
+    {"label": "Priority 2 — Framing gaps. Complete before tech screen.", "color": "AMBER"},
+    {"label": "Priority 3 — Differentiators. Complete before final round.", "color": "GREEN"}
+  ],
+  "plan": [
+    {"type": "head", "color": "RED", "heading": "PHASE 1 — Replace this heading"},
+    {"type": "course", "source": "Pluralsight", "color": "RED",
+     "num": "1", "title": "Course Title",
+     "url": "https://www.pluralsight.com/courses/slug",
+     "gap": "One sentence — what this closes and why it matters.",
+     "hrs": "~1h"}
+  ],
+  "key_links": [
+    {"label": "Pluralsight profile",
+     "url":  "https://app.pluralsight.com/profile/sarah-ashford-dev"},
+    {"label": "Applied Skills — browse all",
+     "url":  "https://learn.microsoft.com/en-us/credentials/browse/?credential_types=applied-skills"}
+  ],
+  "footer": "Generated Aug 2026 · All links are direct URLs · Click to open in browser"
+}

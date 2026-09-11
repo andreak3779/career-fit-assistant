@@ -1,0 +1,13 @@
+{
+  "name": "application-engine-templates",
+  "private": true,
+  "description": "DOCX generation templates for resume/cover-letter skills",
+  "scripts": {
+    "check-templates": "node -c templates/_layout.js && for f in templates/resume-template.js templates/cover-letter-template.js templates/cold-outreach-letter-template.js templates/thank-you-letter-template.js; do node --check \"$f\" && echo \"  ✓ $f\" || { echo \"  ✗ $f\"; exit 1; }; done",
+    "check-pii": "node scripts/check-pii.js",
+    "check": "npm run check-templates && npm run check-pii"
+  },
+  "dependencies": {
+    "docx": "^9"
+  }
+}

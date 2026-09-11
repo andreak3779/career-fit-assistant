@@ -1,0 +1,111 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "career-fit-assistant"
+version = "0.1.0"
+description = "Deterministic job-search automation toolkit for Andrea Kaplen"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Andrea Kaplen"}
+]
+dependencies = [
+]
+
+[project.optional-dependencies]
+parser = [
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+]
+docx = [
+    "python-docx>=1.1",
+]
+yaml = [
+    "pyyaml>=6.0",
+]
+schema = [
+    "jsonschema>=4.21",
+]
+pdf = [
+    "reportlab>=4.0",
+]
+mcp = [
+    "mcp[cli]>=1.2",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+]
+lint = [
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+# No [project.scripts] entry on purpose: the CLI is invoked as
+# `python3 -m cli.career_fit_api` (see README) so we don't need to ship a
+# console-script wrapper. If we ever want a `career-fit-api` binary we
+# can add `career-fit-api = "cli.career_fit_api:main"` here and start
+# `pip install -e .` in CI's pytest job.
+
+# NOTE: setuptools' `find_packages()` discovers package names from directory
+# names verbatim. The on-disk directories use dashes ("project-1-application-engine")
+# but the import contract (and `package-dir` mapping below) uses underscores.
+# We therefore cannot rely on `packages.find` with an underscore-based include
+# glob — that matches nothing. An explicit `packages = [...]` list with the
+# underscored names is the only way to register the package names we want,
+# while `package-dir` remaps each to its dashed on-disk directory.
+[tool.setuptools]
+packages = [
+    "shared",
+    "cli",
+    "mcp_server",
+    "project_1_application_engine",
+    "project_2_profile_learning_hub",
+    "project_3_presence_identity",
+]
+
+[tool.setuptools.package-dir]
+project_1_application_engine = "project-1-application-engine"
+project_2_profile_learning_hub = "project-2-profile-learning-hub"
+project_3_presence_identity = "project-3-presence-identity"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# Baseline ignores — add per-line `noqa` for false positives:
+# - E402: many project scripts intentionally bootstrap sys.path before
+#   imports (legacy pattern being phased out).
+# - E501: line-length handled by formatter, not linter.
+# - B008: function-call defaults in test fixtures are intentional.
+# - B023: loop variables in test fixtures are intentional closures.
+# - UP042: codebase keeps the (str, Enum) pattern for 3.10 compat in tests;
+#   migrate to StrEnum (3.11+) in a separate sweep.
+ignore = ["E501", "E402", "B008", "B023", "UP042"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+# Known limitations in shared/ (TODO: tighten over time):
+# - to_dict() helpers in models.py return Any from asdict (27 Any-return).
+# - markdown_sources.py uses dict[str, Any] access patterns (7 union-attr).
+# - docx_layout.py depends on python-docx stubs (6 valid-type + 3 attr-defined).
+# These surfaces are not enforced by CI; type errors here surface at runtime.
+[[tool.mypy.overrides]]
+module = [
+    "shared.docx_layout",
+    "shared.markdown_sources",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "shared.models"
+warn_return_any = false

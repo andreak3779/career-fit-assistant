@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "career-fit-assistant": {
+      "command": "/path/to/career-fit-assistant/.venv/bin/python3",
+      "args": ["-m", "mcp_server.server"],
+      "cwd": "/path/to/career-fit-assistant"
+    }
+  }
+}

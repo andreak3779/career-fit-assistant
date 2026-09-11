@@ -1,0 +1,29 @@
+# Mirrors .gitignore, plus explicit exclusions for data that must never
+# enter a build layer even though it's already gitignored/untracked — see
+# the "PII" section of mcp_server/README.md for why.
+
+outputs/
+project-1-application-engine/outputs/
+project-1-application-engine/node_modules/
+project-2-profile-learning-hub/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+.venv-1/
+.venv-2/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.git/
+plans/
+
+# PII — never baked into an image layer; reaches the running container only
+# via the bind mount documented in mcp_server/README.md.
+**/app-engine-bundle.md
+**/pluralsight_learning_history.json
+**/Resume_Snapshot.md

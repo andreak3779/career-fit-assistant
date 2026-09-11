@@ -1,0 +1,8 @@
+node_modules/
+*.docx
+*.pdf
+.DS_Store
+
+# Generated bundle contains PII (email, phone) — regenerate via Project 2's
+# profile-hub-bundle-generator skill and reimport locally; never commit.
+app-engine-bundle.md
