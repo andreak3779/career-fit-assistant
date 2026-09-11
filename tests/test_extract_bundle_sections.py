@@ -112,7 +112,10 @@ def test_section_returns_named_heading_only(x, fixture_root, capsys):
 
 def test_section_matches_first_occurrence_of_duplicate_heading(x, fixture_root, capsys):
     rc = x.cmd_section(
-        fixture_root, "project-1-application-engine", "app-engine-bundle.md", ["Key Differentiators"]
+        fixture_root,
+        "project-1-application-engine",
+        "app-engine-bundle.md",
+        ["Key Differentiators"],
     )
     assert rc == 0
     out = capsys.readouterr().out
@@ -135,7 +138,10 @@ def test_section_multiple_names_in_one_call(x, fixture_root, capsys):
 
 def test_section_not_found(x, fixture_root, capsys):
     rc = x.cmd_section(
-        fixture_root, "project-1-application-engine", "app-engine-bundle.md", ["Nonexistent Section"]
+        fixture_root,
+        "project-1-application-engine",
+        "app-engine-bundle.md",
+        ["Nonexistent Section"],
     )
     assert rc == 1
     assert "SECTION NOT FOUND" in capsys.readouterr().out
@@ -167,10 +173,14 @@ def test_project_flag_routes_to_a_different_project_dir(x, tmp_path, capsys):
     )
     rc = x.main(
         [
-            "--root", str(tmp_path),
-            "--project", "project-3-presence-identity",
-            "--file", "presence-bundle.md",
-            "section", "Copy Fragments",
+            "--root",
+            str(tmp_path),
+            "--project",
+            "project-3-presence-identity",
+            "--file",
+            "presence-bundle.md",
+            "section",
+            "Copy Fragments",
         ]
     )
     assert rc == 0

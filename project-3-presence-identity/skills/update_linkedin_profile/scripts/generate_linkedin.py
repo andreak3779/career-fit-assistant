@@ -267,7 +267,9 @@ def _step1_about(skill_text: str, fragments: dict[str, str]) -> tuple[str, list[
         return "", warnings
     about = _substitute_fragments(blocks[0].strip("\n"), fragments)
     if len(about) > 2600:
-        warnings.append(f"Step 1 About is {len(about)} chars — over the 2,600 limit, trim before pasting")
+        warnings.append(
+            f"Step 1 About is {len(about)} chars — over the 2,600 limit, trim before pasting"
+        )
     return about, warnings
 
 
@@ -295,7 +297,9 @@ def _step3_experience_entry(
             lines.append(line)
     text = _substitute_fragments("\n".join(lines).strip("\n"), fragments)
     if len(text) > 2000:
-        warnings.append(f"Step 3 Experience entry is {len(text)} chars — over the 2,000 limit, trim before pasting")
+        warnings.append(
+            f"Step 3 Experience entry is {len(text)} chars — over the 2,000 limit, trim before pasting"
+        )
     return text, warnings
 
 
@@ -354,14 +358,18 @@ def _status_label(status_cell: str) -> str:
     return m.group(1) if m else status_cell
 
 
-def _step5_certifications(skill_text: str, cert_rows: list[tuple[str, str]]) -> tuple[str, list[str]]:
+def _step5_certifications(
+    skill_text: str, cert_rows: list[tuple[str, str]]
+) -> tuple[str, list[str]]:
     section = _section_text(skill_text, "Step 5 — Certifications") or ""
     ai200_status = next((s for c, s in cert_rows if c == "AI-200"), "")
     warnings: list[str] = []
     if "certified" in _status_label(ai200_status).lower():
-        warnings.append("AI-200 shows Certified in the bundle — SKILL.md Step 5 still says wait; add the badge now")
+        warnings.append(
+            "AI-200 shows Certified in the bundle — SKILL.md Step 5 still says wait; add the badge now"
+        )
         section = section.replace(
-            '**Do NOT add AI-200 manually** — it\'s still in progress. '
+            "**Do NOT add AI-200 manually** — it's still in progress. "
             "Wait for Microsoft to issue that credential before repeating the steps above.",
             "**AI-200 is certified with a live credential** — add it now via the Microsoft Learn "
             "credentials page → Share → Add to LinkedIn, the same way AZ-900 was added above.",
@@ -463,7 +471,7 @@ def _build_rich_draft(md: MdBundle, skill_text: str) -> tuple[str, list[str]]:
         "",
         "## After applying",
         "Once each field above has been pasted into LinkedIn, update the "
-        "\"Current State vs Target\" diff table in SKILL.md by hand — this draft "
+        '"Current State vs Target" diff table in SKILL.md by hand — this draft '
         "has no visibility into what's actually live on LinkedIn.",
     ]
     return "\n".join(sections), warnings
@@ -477,8 +485,10 @@ def main(argv: list[str] | None = None) -> int:
         prog="generate-linkedin", description="Generate LinkedIn profile copy"
     )
     parser.add_argument(
-        "--out", type=Path, help="Output markdown file (default: linkedin-update-draft.md, "
-        "or outputs/LinkedIn_Copy.md if presence-bundle.md is unavailable)"
+        "--out",
+        type=Path,
+        help="Output markdown file (default: linkedin-update-draft.md, "
+        "or outputs/LinkedIn_Copy.md if presence-bundle.md is unavailable)",
     )
     args = parser.parse_args(argv)
 
@@ -524,7 +534,9 @@ def main(argv: list[str] | None = None) -> int:
             warnings.append("sparse bundle — manually review public copy")
         if not bundle.headline:
             warnings.append("no bundle headline — fallback headline used")
-        warnings.append(f"presence-bundle.md not found at {MD_BUNDLE_PATH} — used generic JSON-bundle copy")
+        warnings.append(
+            f"presence-bundle.md not found at {MD_BUNDLE_PATH} — used generic JSON-bundle copy"
+        )
         evidence_sources = [p.name for p in bundle.portfolio_projects[:6]]
 
     try:
@@ -546,7 +558,10 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"Wrote {raw_inputs_file}")
         except OSError as exc:
-            print(f"WARNING: could not write raw inputs file {raw_inputs_file}: {exc}", file=sys.stderr)
+            print(
+                f"WARNING: could not write raw inputs file {raw_inputs_file}: {exc}",
+                file=sys.stderr,
+            )
 
     sidecar = write_sidecar(
         out_file,

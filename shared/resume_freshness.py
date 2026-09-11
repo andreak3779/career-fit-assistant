@@ -64,6 +64,5 @@ def resume_freshness_lines(root: Path) -> list[str]:
             "parsed work history the platform builds from the resume itself.",
         ]
     return [
-        f"Resume file (`{resume_path.name}`) is current relative to "
-        f"{', '.join(_SOURCE_FILES)}."
+        f"Resume file (`{resume_path.name}`) is current relative to {', '.join(_SOURCE_FILES)}."
     ]

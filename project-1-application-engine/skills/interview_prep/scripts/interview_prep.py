@@ -320,7 +320,11 @@ def generate_interview_prep(
     banner(
         doc,
         title=parsed.title,
-        subtitle_lines=[parsed.company, bundle.contact.name or DEFAULT_SIGNATURE_NAME, f"{stage_label} · {today}"],
+        subtitle_lines=[
+            parsed.company,
+            bundle.contact.name or DEFAULT_SIGNATURE_NAME,
+            f"{stage_label} · {today}",
+        ],
     )
 
     if not _blank(recruiter_briefing):

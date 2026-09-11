@@ -246,7 +246,9 @@ def render_app_engine_bundle(profile: ProfileBundle, root: Path) -> str:
     )
 
     github_repos_raw = _read_file(root / "project-2-profile-learning-hub" / "github-repos.md")
-    resume_snapshot_raw_full = _read_file(root / "project-2-profile-learning-hub" / "Resume_Snapshot.md")
+    resume_snapshot_raw_full = _read_file(
+        root / "project-2-profile-learning-hub" / "Resume_Snapshot.md"
+    )
     candidate_name = _candidate_name(resume_snapshot_raw_full)
     resume_snapshot_raw = _strip_last_modified_line(resume_snapshot_raw_full)
 

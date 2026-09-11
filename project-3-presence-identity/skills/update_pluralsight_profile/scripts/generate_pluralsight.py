@@ -110,7 +110,9 @@ def main(argv: list[str] | None = None) -> int:
         prog="generate-pluralsight", description="Generate Pluralsight profile copy"
     )
     parser.add_argument(
-        "--out", type=Path, help="Output markdown file (default: pluralsight-profile-update-draft.md)"
+        "--out",
+        type=Path,
+        help="Output markdown file (default: pluralsight-profile-update-draft.md)",
     )
     args = parser.parse_args(argv)
 
