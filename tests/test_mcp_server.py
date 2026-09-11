@@ -66,9 +66,24 @@ def test_validate_bundles_runs() -> None:
     assert "Alias registry" in out or "OK" in out
 
 
-def test_build_bundles_runs() -> None:
+def test_build_bundles_delegates_to_cli(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The real build is covered against a fixture repo in test_build_bundles.py.
+
+    Calling it for real here rewrites this repo's own committed bundles, since
+    the CLI's `build` resolves its root from __file__ and takes no override.
+    """
+    calls: list[list[str]] = []
+
+    def fake_run_cli(argv: list[str]) -> str:
+        calls.append(argv)
+        return "wrote profile-bundle.json"
+
+    monkeypatch.setattr("mcp_server.server._run_cli", fake_run_cli)
+
     out = build_bundles()
-    assert isinstance(out, str)
+
+    assert calls == [["build"]]
+    assert out == "wrote profile-bundle.json"
 
 
 def test_gap_analysis_writes_markdown_report(tmp_path: Path) -> None:
@@ -96,9 +111,7 @@ def test_generate_linkedin_writes_copy(tmp_path: Path) -> None:
         and "# LinkedIn Profile Update Draft" in r.resource.text
         for r in resources
     )
-    assert not any(
-        "# LinkedIn Profile Update Draft" in b.text for b in _text_blocks(blocks)
-    )
+    assert not any("# LinkedIn Profile Update Draft" in b.text for b in _text_blocks(blocks))
 
 
 def test_generate_github_writes_readme(tmp_path: Path) -> None:
