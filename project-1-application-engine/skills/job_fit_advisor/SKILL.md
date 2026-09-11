@@ -20,10 +20,9 @@ hardcoded role lists.
 
 ## Step 1 — Load Source Files
 
-Load all three before writing any output:
+Load both before writing any output:
 
-- `app-engine-bundle.md` — cert status, differentiators, resolved and genuine gaps
-- `app-engine-bundle.md` — current ATS keyword stack, tech categories
+- `python project-1-application-engine/scripts/extract_bundle_sections.py facts` — cert status, differentiators, resolved and genuine gaps, current ATS keyword stack, tech categories (everything `app-engine-bundle.md` has before `## Resume`; this skill never needs the resume/career-history prose, so don't load the full bundle)
 - `JobSearch_KeywordStrategy.md` — existing primary/secondary/stretch role groupings
 
 ---

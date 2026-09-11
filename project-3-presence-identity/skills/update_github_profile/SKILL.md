@@ -10,15 +10,17 @@ description: >
 
 # GitHub Profile Update Skill
 
-> **Source file**: `presence-bundle.md`
-> Load before regenerating any field content.
-> Check `presence-bundle.md` cert table before filling cert-related fields.
-> Any `{fragment_name}` placeholder below must be filled from `presence-bundle.md`'s
-> **Copy Fragments** section before presenting the final paste-ready text —
-> never leave a literal `{fragment_name}` in delivered output. If that section
-> is missing from the loaded bundle (older bundle version, pre-fragments), fall
-> back to computing the value the same way `profile-hub-bundle-generator_SKILL.md`
-> Step 2.5 does, from `profile-facts.md` / `skills-summary.md` directly.
+> **Source file**: `presence-bundle.md` (~8K tokens) — this skill only ever needs
+> the **Copy Fragments** and **Cert Status + Badge URLs** sections, never
+> Experience/Skills/Portfolio, so don't load the whole file. Run
+> `python project-1-application-engine/scripts/extract_bundle_sections.py --file presence-bundle.md --project project-3-presence-identity section "Copy Fragments" "Cert Status + Badge URLs"`
+> before regenerating any field content.
+> Any `{fragment_name}` placeholder below must be filled from the **Copy Fragments**
+> output before presenting the final paste-ready text — never leave a literal
+> `{fragment_name}` in delivered output. If that section is missing (older bundle
+> version, pre-fragments), fall back to computing the value the same way
+> `profile-hub-bundle-generator_SKILL.md` Step 2.5 does, from `profile-facts.md` /
+> `skills-summary.md` directly.
 
 ## Character Limits
 | Field | Limit |
