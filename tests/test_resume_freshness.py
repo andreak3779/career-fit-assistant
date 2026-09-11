@@ -78,10 +78,15 @@ def test_missing_source_files_are_skipped_not_fatal(tmp_path: Path) -> None:
 
 
 def test_picks_most_recent_match_when_multiple_resumes_present(tmp_path: Path) -> None:
-    older = tmp_path.joinpath(*_RESUME_DIR_PARTS, "SarahAshford_Resume_Draft1.docx")
-    newer = tmp_path.joinpath(*_RESUME_DIR_PARTS, "SarahAshford_Resume_SeniorFullStackNET.docx")
-    _write(older)
+    # Names chosen so the newer file sorts EARLIER alphabetically: a plain
+    # sorted()[-1] would pick the stale one and this test would catch it.
+    newer = tmp_path.joinpath(*_RESUME_DIR_PARTS, "SarahAshford_Resume_Alpha.docx")
+    older = tmp_path.joinpath(*_RESUME_DIR_PARTS, "SarahAshford_Resume_Zulu.docx")
     _write(newer)
+    _write(older)
+    past = time.time() - 100
+    os.utime(older, (past, past))
 
     lines = resume_freshness_lines(tmp_path)
     assert any(newer.name in line for line in lines)
+    assert not any(older.name in line for line in lines)

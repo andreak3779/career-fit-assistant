@@ -29,8 +29,12 @@ def _find_resume(root: Path) -> Path | None:
     resume_dir = root.joinpath(*_RESUME_OUTPUT_DIR_PARTS)
     if not resume_dir.is_dir():
         return None
-    matches = sorted(resume_dir.glob(_RESUME_GLOB))
-    return matches[-1] if matches else None
+    matches = list(resume_dir.glob(_RESUME_GLOB))
+    if not matches:
+        return None
+    # Most recently built wins: this is a staleness check, so an older resume
+    # that happens to sort later alphabetically is the wrong one to report on.
+    return max(matches, key=lambda p: p.stat().st_mtime)
 
 
 def resume_freshness_lines(root: Path) -> list[str]:
