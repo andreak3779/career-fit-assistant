@@ -1,7 +1,7 @@
 <!-- GENERATED FILE — do not hand-edit. Regenerate via profile-hub-bundle-generator skill. -->
 # Presence Bundle — Sarah Ashford
-bundle_version: 20
-generated: 2026-09-11
+bundle_version: 26
+generated: 2026-09-15
 
 ---
 ## Copy Fragments

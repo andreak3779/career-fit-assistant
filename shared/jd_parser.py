@@ -24,6 +24,18 @@ _REQUIRED_HEADING_RE = re.compile(
     re.IGNORECASE,
 )
 _NICE_HEADING_RE = re.compile(r"(nice to have|preferred|bonus|asset|desirable)", re.IGNORECASE)
+# Common non-requirement section headings that follow a requirements list in
+# real-world postings (benefits/perks/company-blurb sections). Without this,
+# `section` never resets once set, so a heading-shaped line the parser
+# doesn't otherwise recognize (e.g. "What we offer") leaves the *following*
+# section's bullets miscategorized as required/nice-to-have indefinitely —
+# see tests/fixtures for a real posting that silently absorbed its entire
+# benefits list as "required skills" this way.
+_SECTION_END_HEADING_RE = re.compile(
+    r"(what we offer|benefits?|perks|compensation|why (?:join|work)|"
+    r"about (?:us|the company)|our culture|company overview)",
+    re.IGNORECASE,
+)
 # A heading-shaped line doesn't end in sentence punctuation — "## Nice to
 # Have" / "**Requirements:**" don't, but a prose sentence that happens to
 # mention "a bonus" or "nice to have" in passing does. This alone can't tell
@@ -101,6 +113,12 @@ def parse_jd(text: str) -> ParsedJD:
             continue
         if looks_like_heading and _NICE_HEADING_RE.search(lower):
             section = "nice"
+            continue
+        # Reset the section on a "What we offer" / "Benefits" / etc. heading
+        # so its following bullets (which would otherwise be absorbed into the
+        # most-recent required/nice section) don't get miscategorized.
+        if looks_like_heading and _SECTION_END_HEADING_RE.search(lower):
+            section = None
             continue
         if section and is_bullet:
             item = stripped.lstrip("-•1234567890.) ").strip()

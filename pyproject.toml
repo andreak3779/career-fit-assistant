@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "career-fit-assistant"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deterministic job-search automation toolkit for Andrea Kaplen"
 readme = "README.md"
 requires-python = ">=3.11"
