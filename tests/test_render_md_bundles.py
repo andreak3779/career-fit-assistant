@@ -41,13 +41,15 @@ def r():
     return _load_module()
 
 
-def test_cert_status_short_skips_not_pursuing(r):
+def test_cert_status_short_skips_not_pursuing():
+    from shared.cert_status import cert_status_short
+
     certs = [
         Cert(code="AZ-900", status=CertStatus.CERTIFIED, date=date(2026, 4, 18)),
         Cert(code="AI-200", status=CertStatus.IN_PROGRESS),
         Cert(code="AZ-204", status=CertStatus.NOT_PURSUING),
     ]
-    assert r._cert_status_short(certs) == "AZ-900 Certified · AI-200 in progress"
+    assert cert_status_short(certs) == "AZ-900 Certified · AI-200 in progress"
 
 
 def test_cert_row_certified_uses_date_not_notes(r):
@@ -69,24 +71,28 @@ def test_cert_row_not_pursuing_uses_notes_verbatim(r):
     assert r._cert_row(c) == "| AZ-204 | Not pursuing — retired |"
 
 
-def test_course_count_sentence_parses_pace_of_learning_bullet(r):
+def test_course_count_sentence_parses_pace_of_learning_bullet():
+    from shared.copy_fragments import compute_copy_fragments
+
     differentiators = [
         "Pace of learning: 218 courses completed + 53 in progress + 27 labs "
         "(26 completed, 1 in progress) = **298 total** since Oct 2025"
     ]
-    fragments = r.compute_copy_fragments(differentiators, [], ROOT)
+    fragments = compute_copy_fragments(differentiators, [], None)
     assert fragments["course_count_sentence"] == (
         "218 Pluralsight courses completed and 53 more in progress, "
         "plus 27 hands-on labs (26 completed, 1 in progress) — 298 total"
     )
 
 
-def test_github_copilot_and_leadership_counts_extracted(r):
+def test_github_copilot_and_leadership_counts_extracted():
+    from shared.copy_fragments import compute_copy_fragments
+
     differentiators = [
         "GitHub Copilot: 19 courses — enterprise, CI/CD, security, AI agents",
         "Communication: 19 leadership/communication Pluralsight courses",
     ]
-    fragments = r.compute_copy_fragments(differentiators, [], ROOT)
+    fragments = compute_copy_fragments(differentiators, [], None)
     assert fragments["github_copilot_course_count"] == "19"
     assert fragments["leadership_course_count"] == "19"
 

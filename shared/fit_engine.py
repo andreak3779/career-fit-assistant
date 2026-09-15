@@ -75,13 +75,26 @@ class FitResult:
 
 
 def _load_aliases(path: Path | None = None) -> dict[str, list[str]]:
-    """Load the alias registry from shared/aliases.json."""
+    """Load the alias registry from shared/aliases.json.
+
+    Fails loudly (``ValueError``) on a malformed entry rather than silently
+    misinterpreting it — e.g. ``{"C#": "csharp"}`` (a string where a list was
+    intended, an easy hand-editing slip) would otherwise iterate the string
+    character-by-character, producing bogus single-letter aliases that
+    quietly degrade every fit-check/gap-analysis rating with no visible
+    error. This is loaded once at import time as a module-level constant, so
+    the failure surfaces immediately at process startup instead of as a
+    hard-to-trace bad match deep in a rating result.
+    """
     if path is None:
         path = Path(__file__).with_name("aliases.json")
     if not path.exists():
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
     aliases = data.get("aliases", {})
+    for key, vals in aliases.items():
+        if not isinstance(vals, list) or not all(isinstance(v, str) for v in vals):
+            raise ValueError(f"aliases.json entry {key!r} must be a list of strings, got {vals!r}")
     return {str(k).lower(): [str(v).lower() for v in vals] for k, vals in aliases.items()}
 
 

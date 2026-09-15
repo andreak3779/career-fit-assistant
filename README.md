@@ -230,3 +230,18 @@ Project 2 has two personal-utility Python scripts:
 - This is a **public** snapshot exported from a private working repo — real personal data was replaced before publishing: `Resume_Snapshot.md` here is a fictional example persona (see the note at the top of this file), and `app-engine-bundle.md` (real PII when generated) stays gitignored exactly as in the private repo.
 - `outputs/` directories in each project are working dirs (regenerated artifacts) and are gitignored at the repo root.
 - venv: `.venv/` is gitignored at both the repo root and project-2 level (belt-and-suspenders).
+
+## Changelog
+
+### v0.2.0
+
+- **Strict alias validation in `shared/fit_engine.py`** — `_load_aliases()` now raises `ValueError` on malformed alias entries (non-list, non-string items, missing keys) instead of iterating single-character strings silently and silently scoring everything as a match. Malformed `aliases.json` will now fail loudly at fit-check time.
+- **Expanded JD parser section-end regex (`shared/jd_parser.py`)** — adds "What we offer", "Benefits", "Perks", "Compensation", "Why join/work", "About us/the company", "Our culture", and "Company overview" as section-reset headings so the requirements parser stops picking up boilerplate as required skills.
+- **`pre-commit` already includes `check_bundle_freshness.py` + `outputs/profile-bundle.json` gate** (this was a no-op migration — public was already ahead of private on this front).
+- **New `tests/test_cli_common.py`** (5 tests) + **`_cli_common.py` extended** with `load_bundle_or_none()`, `print_wrote()`, `run_and_report()` helpers from the private repo.
+- **New `shared/copy_fragments.py` and `shared/cert_status.py`** — extraction of cert-status and copy-fragment computation from `render_md_bundles.py` into shared helpers, so future generators (LinkedIn / Jobgether / Job Board / Pluralsight profile drafts) can call them directly from a loaded bundle without re-parsing the rendered markdown. `render_md_bundles.py` is wired to the new modules; `tests/test_render_md_bundles.py` updated to test the public-API surface.
+
+### v0.1.0
+
+Initial public release.
+

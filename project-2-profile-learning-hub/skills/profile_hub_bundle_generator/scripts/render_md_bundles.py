@@ -26,8 +26,14 @@ import sys
 from pathlib import Path
 
 from shared import load_presence_bundle, load_profile_bundle
+from shared.cert_status import cert_status_cell
+from shared.copy_fragments import (
+    azure_coursework_cell,
+    compute_copy_fragments_by_root,
+    fragments_block,
+)
 from shared.docx_layout import DEFAULT_SIGNATURE_NAME
-from shared.models import Cert, CertStatus, PresenceBundle, ProfileBundle
+from shared.models import Cert, PresenceBundle, ProfileBundle
 from shared.pii_guard import scan_text
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -36,76 +42,12 @@ _SOURCE_LABEL_ORDER = ["profile-facts", "Resume_Snapshot", "github-repos", "skil
 
 
 # ---------------------------------------------------------------------------
-# Copy Fragments — computed once, shared by both bundles
+# Copy Fragments are computed by `shared.copy_fragments.compute_copy_fragments_by_root`
+# (imported above); this module only renders the bundle, it does not inline
+# the regex/parsing logic any more. The cert-row renderer below is local
+# because it embeds dates/credential URLs specific to the markdown table
+# shape and isn't reused by the JSON-pipeline consumers.
 # ---------------------------------------------------------------------------
-
-
-def _cert_status_short(cert_registry: list[Cert]) -> str:
-    parts: list[str] = []
-    for c in cert_registry:
-        if c.status == CertStatus.CERTIFIED:
-            parts.append(f"{c.code} Certified")
-        elif c.status == CertStatus.IN_PROGRESS:
-            parts.append(f"{c.code} in progress")
-    return " · ".join(parts)
-
-
-def _differentiator_match(differentiators: list[str], pattern: str) -> re.Match[str] | None:
-    for item in differentiators:
-        match = re.search(pattern, item, re.IGNORECASE)
-        if match:
-            return match
-    return None
-
-
-def compute_copy_fragments(
-    differentiators: list[str], cert_registry: list[Cert], root: Path
-) -> dict[str, str]:
-    fragments: dict[str, str] = {"cert_status_short": _cert_status_short(cert_registry)}
-
-    copilot = _differentiator_match(differentiators, r"GitHub Copilot:\s*(\d+)\s*courses")
-    fragments["github_copilot_course_count"] = copilot.group(1) if copilot else ""
-
-    leadership = _differentiator_match(
-        differentiators, r"Communication:\s*(\d+)\s*leadership/communication"
-    )
-    fragments["leadership_course_count"] = leadership.group(1) if leadership else ""
-
-    azure = _azure_coursework_counts(root)
-    if azure:
-        courses, labs = azure
-        fragments["azure_course_lab_sentence"] = (
-            f"{courses} Pluralsight courses and {labs} hands-on labs across Azure"
-        )
-    else:
-        fragments["azure_course_lab_sentence"] = ""
-
-    pace = _differentiator_match(
-        differentiators,
-        r"Pace of learning:\s*(\d+)\s*courses completed \+\s*(\d+)\s*in progress \+\s*"
-        r"(\d+)\s*labs\s*\((\d+)\s*completed,\s*(\d+)\s*in progress\)\s*=\s*\*{0,2}(\d+)\s*total",
-    )
-    if pace:
-        completed, in_progress, labs, labs_done, labs_wip, total = pace.groups()
-        fragments["course_count_sentence"] = (
-            f"{completed} Pluralsight courses completed and {in_progress} more in progress, "
-            f"plus {labs} hands-on labs ({labs_done} completed, {labs_wip} in progress) — {total} total"
-        )
-    else:
-        fragments["course_count_sentence"] = ""
-
-    return fragments
-
-
-def _fragments_block(fragments: dict[str, str]) -> str:
-    keys = [
-        "course_count_sentence",
-        "cert_status_short",
-        "azure_course_lab_sentence",
-        "github_copilot_course_count",
-        "leadership_course_count",
-    ]
-    return "\n".join(f'{k}: "{fragments.get(k, "")}"' for k in keys)
 
 
 # ---------------------------------------------------------------------------
@@ -114,13 +56,7 @@ def _fragments_block(fragments: dict[str, str]) -> str:
 
 
 def _cert_row(c: Cert) -> str:
-    if c.status == CertStatus.CERTIFIED:
-        date_str = f"{c.date:%B} {c.date.day}, {c.date.year}" if c.date else ""
-        cred = f" — [Credential]({c.credential_url})" if c.credential_url else ""
-        return f"| {c.code} | **Certified {date_str}**{cred} |"
-    if c.status == CertStatus.IN_PROGRESS:
-        return f"| {c.code} | **Active target** — {c.notes or ''} |"
-    return f"| {c.code} | {c.notes or 'Not pursuing'} |"
+    return f"| {c.code} | {cert_status_cell(c)} |"
 
 
 def _render_cert_table(
@@ -182,33 +118,9 @@ def _second_nonblank_line(text: str) -> str:
     return ""
 
 
-_AZURE_COURSEWORK_ROW_RE = re.compile(r"\|\s*Azure coursework\s*\|\s*(.+?)\s*\|", re.IGNORECASE)
-_AZURE_COUNTS_RE = re.compile(r"(\d+)\s*courses?\s*\+\s*(\d+)\s*labs", re.IGNORECASE)
-
-
-def _azure_coursework_cell(root: Path) -> str | None:
-    """Read the full "Azure coursework" summary-row cell from profile-facts.md.
-
-    This row lives only in profile-facts.md's markdown Cert Status table, not
-    in the YAML frontmatter `certs:` list that the typed pipeline otherwise
-    reads — so it isn't available anywhere in the JSON bundle. Reading it here
-    (rather than teaching the typed model a one-off field for a single summary
-    row) keeps the schema focused on real certs.
-    """
-    path = root / "project-2-profile-learning-hub" / "profile-facts.md"
-    if not path.exists():
-        return None
-    match = _AZURE_COURSEWORK_ROW_RE.search(path.read_text(encoding="utf-8"))
-    return match.group(1) if match else None
-
-
-def _azure_coursework_counts(root: Path) -> tuple[str, str] | None:
-    """Extract just the (courses, labs) counts, for the Copy Fragment sentence."""
-    cell = _azure_coursework_cell(root)
-    if not cell:
-        return None
-    match = _AZURE_COUNTS_RE.search(cell)
-    return (match.group(1), match.group(2)) if match else None
+# `azure_coursework_cell` and the (courses, labs) extractor live in
+# `shared.copy_fragments` (imported at the top of this module) so the bundle
+# markdown and any direct call site agree on the regex and source path.
 
 
 def _read_prior_changelog(path: Path, max_entries: int = 4) -> list[str]:
@@ -227,7 +139,7 @@ def _read_prior_changelog(path: Path, max_entries: int = 4) -> list[str]:
 
 
 def render_app_engine_bundle(profile: ProfileBundle, root: Path) -> str:
-    fragments = compute_copy_fragments(profile.differentiators, profile.cert_registry, root)
+    fragments = compute_copy_fragments_by_root(profile.differentiators, profile.cert_registry, root)
     target_path = root / "project-1-application-engine" / "app-engine-bundle.md"
 
     prior = _read_prior_changelog(target_path)
@@ -275,11 +187,11 @@ change_log:
 
 ---
 ## Copy Fragments
-{_fragments_block(fragments)}
+{fragments_block(fragments)}
 
 ---
 ## Cert Registry
-{_render_cert_table(profile.cert_registry, _azure_coursework_cell(root), include_azure_row=True)}
+{_render_cert_table(profile.cert_registry, azure_coursework_cell(root), include_azure_row=True)}
 
 ---
 
@@ -325,7 +237,7 @@ Treat all of these as ✅ Strong Match in every gap analysis:
 
 
 def render_presence_bundle(presence: PresenceBundle, root: Path) -> str:
-    fragments = compute_copy_fragments(presence.differentiators, presence.cert_registry, root)
+    fragments = compute_copy_fragments_by_root(presence.differentiators, presence.cert_registry, root)
 
     resume_snapshot_raw = _read_file(root / "project-2-profile-learning-hub" / "Resume_Snapshot.md")
     candidate_name = _candidate_name(resume_snapshot_raw)
@@ -358,7 +270,7 @@ generated: {presence.generated.isoformat()}
 
 ---
 ## Copy Fragments
-{_fragments_block(fragments)}
+{fragments_block(fragments)}
 
 ---
 ## Professional Headline
